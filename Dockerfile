@@ -8,9 +8,7 @@ WORKDIR /opt/image-packager
 RUN addgroup -g 10001 app && adduser -D -u 10001 -G app app \
     && mkdir /data && chown app:app /data && chmod 700 /data
 COPY server.py container_start.py packager.py ./
-COPY design/index.html design/login.html design/setup.html design/account.html \
-     design/studio.css design/auth.css design/studio.js design/auth.js \
-     design/auth-client.js design/session.js design/account.js design/favicon.svg ./design/
+COPY design/*.html design/*.css design/*.js design/favicon.svg ./design/
 # The entrypoint prepares NAS mount ownership and drops to UID/GID 10001:10001.
 USER 0:0
 EXPOSE 8088
