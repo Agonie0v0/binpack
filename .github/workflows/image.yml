@@ -39,7 +39,7 @@ jobs:
             binpack:ci -m unittest -v test_auth.py
           docker run -d --name binpack-smoke -p 127.0.0.1:8088:8088 binpack:ci
           trap 'docker rm -fv binpack-smoke >/dev/null' EXIT
-          curl --fail --retry 10 --retry-connrefused --retry-delay 1 http://127.0.0.1:8088/healthz
+          curl --fail --retry 10 --retry-all-errors --retry-delay 1 http://127.0.0.1:8088/healthz
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8088/)" = 303
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8088/api/builds)" = 401
           docker exec binpack-smoke python -c "from pathlib import Path; p=Path('/data/setup-token'); assert p.is_file(); assert p.stat().st_mode & 0o777 == 0o600"
