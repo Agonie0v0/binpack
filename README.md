@@ -92,7 +92,7 @@ NAS 容器版把 `DATA_DIR` 设置为 `/data`，并挂载到 NAS 的持久化目
 
 ## 登录与退出
 
-- 工作台、账号页、未来的 API 与下载路由均在服务端鉴权。未登录时页面跳转登录页，接口返回 401。
+- 工作台、账号页、打包 API 与下载路由均在服务端鉴权。未登录时页面跳转登录页，接口返回 401。
 - 密码使用独立随机盐和 PBKDF2-HMAC-SHA256（600,000 次），不保存明文密码。
 - 会话令牌仅通过 HttpOnly、SameSite=Strict Cookie 传递，数据库中也只保存令牌摘要，不使用浏览器 localStorage 保存登录凭证。
 - 普通登录浏览器会话有效，服务端最长 24 小时，空闲 8 小时失效。“保持登录 7 天”最长 7 天，空闲 24 小时失效。浏览器的会话恢复行为因浏览器而异，应使用退出按钮主动结束会话。
@@ -147,4 +147,6 @@ node design/verify-auth-client.mjs
 
 ![登录页](design/login-desktop.jpg)
 
-工作台截图将在界面验证后更新。
+![工作台与账号菜单](design/workbench-desktop.png)
+
+手机布局见 [工作台手机截图](design/workbench-mobile.png)。截图使用临时测试账号，本地未挂载 Docker Socket。
