@@ -296,7 +296,18 @@ class Docker:
                     pass
             finally:
                 connection.close()
-        return self.json('GET', '/images/' + quote(reference, safe='') + '/json')['Id']
+        actual = self.json('GET', '/images/' + quote(reference, safe='') + '/json')
+        with tarfile.open(path) as archive:
+            manifest = json.load(archive.extractfile('manifest.json'))[0]
+            expected = json.load(archive.extractfile(manifest['Config']))
+        # Engine's containerd store identifies a manifest; the legacy store identifies
+        # its config. Compare content/configuration across the archive conversion.
+        if actual.get('RootFS', {}).get('Layers') != expected['rootfs']['diff_ids'] or actual.get('Architecture') != expected['architecture']:
+            raise PackageError('导入镜像的内容层或架构与归档不一致。', 502)
+        for key in ('Entrypoint', 'Cmd', 'Env', 'WorkingDir', 'Labels', 'ExposedPorts', 'Volumes', 'User'):
+            if (actual.get('Config', {}).get(key) or None) != (expected['config'].get(key) or None):
+                raise PackageError(f'导入镜像的 {key} 配置与归档不一致。', 502)
+        return actual['Id']
 
 
 class Packager:
@@ -485,9 +496,7 @@ class Packager:
             if options['auto_import']:
                 update(status='importing', progress=92, message='导入飞牛 Docker 镜像库')
                 imported = self.docker.load(folder / 'image.tar', meta['reference'])
-                if imported != image_id:
-                    raise PackageError('导入结果的镜像 ID 不一致，请手动检查。', 502)
-                update(imported=True)
+                update(imported=True, imported_image_id=imported)
             update(status='complete', progress=100, message='已生成并导入飞牛镜像库' if meta['imported'] else '镜像包已生成')
         except Exception as error:
             update(status='failed', error=self.error(error), message='导入失败，镜像包仍可下载' if meta.get('archive_ready') else '打包失败')
@@ -511,9 +520,7 @@ class Packager:
             def work():
                 try:
                     image_id = self.docker.load(folder / 'image.tar', meta['reference'])
-                    if image_id != meta['image_id']:
-                        raise PackageError('导入镜像 ID 不一致。', 502)
-                    self.write(folder, {**meta, 'status': 'complete', 'imported': True, 'error': '', 'message': '已导入飞牛镜像库', 'progress': 100})
+                    self.write(folder, {**meta, 'status': 'complete', 'imported': True, 'imported_image_id': image_id, 'error': '', 'message': '已导入飞牛镜像库', 'progress': 100})
                 except Exception as error:
                     self.write(folder, {**meta, 'status': 'failed', 'message': '导入失败，镜像包仍可下载', 'error': self.error(error)})
             active = {**meta, 'status': 'importing', 'message': '正在导入飞牛镜像库'}
