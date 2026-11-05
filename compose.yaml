@@ -1,0 +1,17 @@
+services:
+  binpack:
+    image: ${BINPACK_IMAGE:-binpack:local}
+    build: .
+    ports:
+      - "8088:8088"
+    environment:
+      DATA_DIR: /data
+      COOKIE_SECURE: "0"
+      # Lucky HTTPS: set COOKIE_SECURE to "1" and uncomment PUBLIC_ORIGIN.
+      # PUBLIC_ORIGIN: https://binpack.example.com
+    volumes:
+      - binpack-data:/data
+    restart: unless-stopped
+
+volumes:
+  binpack-data:

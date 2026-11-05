@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>镜像打包 · 通用版界面预览</title>
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="auth.css">
+  <script src="auth-client.js" defer></script>
+  <script src="session.js" defer></script>
+  <script src="studio.js" defer></script>
+</head>
+<body>
+  <svg class="icon-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 9 5v9l-9 5-9-5V8l9-5Z"/><path d="m3 8 9 5 9-5m-9 5v9M7.5 5.5l9 5v4"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V3m-4 4 4-4 4 4M4 15v5h16v-5"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M13 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9l-6-6Z"/><path d="M13 3v6h6m-11 5h8m-8 3h5"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8m4 0h4M4 17h3m4 0h9"/><circle cx="14" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2 7M3 5v6h6m3-4v6l4 2"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol>
+  </defs></svg>
+  <header class="app-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="镜像打包首页"><span class="brand-mark"><svg class="icon"><use href="#i-box"/></svg></span><span>镜像打包</span></a>
+      <nav aria-label="主导航"><a class="nav-link active" href="#create" id="create-link" aria-current="page">创建镜像</a><a class="nav-link" href="#history" id="history-link">打包记录</a></nav>
+      <div class="header-end"><span class="preview-label">界面预览</span><button class="help-button" type="button" aria-label="查看使用说明" aria-expanded="false" aria-controls="help-panel"><svg class="icon"><use href="#i-info"/></svg></button><details class="account-menu"><summary aria-label="账号菜单"><span class="account-avatar" data-account-avatar></span><span class="account-name" data-account-name>账号</span><svg class="icon"><use href="#i-chevron"/></svg></summary><div class="account-dropdown"><a href="/account">账号设置</a><button type="button" data-logout>退出登录</button></div></details></div>
+    </div>
+  </header>
+  <main>
+    <section id="create" aria-labelledby="page-title">
+      <div class="page-heading"><div><h1 id="page-title">把程序，装进镜像。</h1><p>上传一个二进制文件，打包成 NAS 可导入的镜像。</p></div><span class="local-label">通用打包工作台</span></div>
+      <div id="help-panel" class="help-panel" hidden><h2>如何使用</h2><p>选择 Linux 二进制文件，设置镜像名称和标签，再按需填写高级设置。正式版将输出 Docker 镜像包、Compose 和校验文件。</p><p>本页为界面预览，不会上传或运行文件。仅用 ELF 文件头识别架构；自定义动态库和附加文件的支持范围将在打包功能中明确。</p></div>
+      <div class="workbench">
+        <form id="pack-form" class="build-form">
+          <div class="section-heading"><h2>二进制文件</h2><span class="field-hint">Linux 可执行文件</span></div>
+          <div class="dropzone" id="dropzone">
+            <input id="binary-file" name="binary" type="file" aria-label="选择 Linux 二进制文件" aria-describedby="file-hint file-error">
+            <div id="empty-file" class="empty-file"><div class="upload-mark"><svg class="icon"><use href="#i-upload"/></svg></div><h3>将文件拖到这里</h3><p>或<span class="choose-text">点击选择文件</span></p><span id="file-hint" class="file-hint">支持 ELF 格式，自动识别文件架构</span></div>
+            <div class="selected-file" id="selected-file" hidden><span class="binary-icon"><svg class="icon"><use href="#i-file"/></svg></span><strong id="file-name"></strong><span id="file-size"></span><span class="selected-check"><svg class="icon"><use href="#i-check"/></svg>文件已就绪</span><span class="replace-file">点击重新选择</span></div>
+          </div>
+          <p class="field-error" id="file-error" role="alert" hidden></p>
+          <div class="identity-fields"><label for="image-name">镜像名称<input id="image-name" name="image" placeholder="my-app" maxlength="128" pattern="[a-z0-9]+([._\-][a-z0-9]+)*" spellcheck="false" autocomplete="off" aria-describedby="name-hint" required></label><label for="image-tag">版本标签<input id="image-tag" name="tag" value="latest" maxlength="128" pattern="[a-zA-Z0-9_][a-zA-Z0-9_.\-]{0,127}" spellcheck="false" autocomplete="off" required></label></div>
+          <p class="name-hint" id="name-hint">使用小写字母、数字，可用 . _ - 分隔。</p>
+          <details class="advanced"><summary><span><svg class="icon"><use href="#i-sliders"/></svg>高级设置</span><span class="advanced-summary">启动参数、端口与挂载目录<svg class="icon"><use href="#i-chevron"/></svg></span></summary>
+            <div class="advanced-fields"><label class="span-two" for="args">启动参数<input id="args" placeholder="例如：--config /data/config.toml" spellcheck="false"></label><label for="port">服务端口<input id="port" placeholder="例如：8080" type="number" min="1" max="65535"></label><label for="volume">容器数据目录<input id="volume" placeholder="例如：/data" spellcheck="false" pattern="/[^\s]*"></label><label class="span-two" for="runtime">基础环境<select id="runtime"><option value="auto">自动识别</option value="alpine">Alpine（musl / 静态程序）</option><option value="debian">Debian（glibc 程序）</option></select></label><p class="settings-note span-two">留空使用程序默认行为。额外的配置文件和动态库需单独提供。</p></div>
+          </details>
+          <div class="form-bottom"><button class="primary-button" id="build-button" type="submit" disabled><span>生成镜像包</span><svg class="icon"><use href="#i-arrow"/></svg></button><span class="form-status" id="form-status">先选择一个文件</span></div>
+        </form>
+        <aside class="output-preview" aria-labelledby="output-title">
+          <div class="section-heading"><h2 id="output-title">镜像预览</h2><span class="status-chip" id="status-chip">等待文件</span></div>
+          <div class="artifact"><span class="archive-icon"><svg class="icon"><use href="#i-box"/></svg></span><code id="image-reference">my-app:latest</code><span class="archive-filename" id="archive-name">my-app_latest.tar</span></div>
+          <dl class="image-properties"><div><dt>目标架构</dt><dd id="architecture">选择文件后识别</dd></div><div><dt>基础环境</dt><dd id="runtime-preview">自动识别</dd></div><div><dt>镜像格式</dt><dd>Docker tar</dd></div></dl>
+          <div class="outputs"><h3>打包后获得</h3><div><span>镜像归档</span><code>.tar</code></div><div><span>部署配置</span><code>compose.yaml</code></div><div><span>完整性校验</span><code>SHA256</code></div></div>
+          <p class="output-note"><svg class="icon"><use href="#i-info"/></svg><span>下载后，在 NAS 的 Docker 管理中<br class="desktop-break">选择「本地导入」即可。</span></p>
+          <div class="build-progress" id="build-progress" hidden role="status"><div><span id="progress-message">正在演示打包</span><span id="progress-percent">0%</span></div><progress id="progress" max="100" value="0"></progress></div>
+          <div class="finished-actions" id="finished-actions" hidden><button class="primary-button" id="preview-download" type="button"><svg class="icon"><use href="#i-download"/></svg>下载镜像包</button><p>当前为演示结果，未生成真实文件。</p></div>
+        </aside>
+      </div>
+    </section>
+    <section class="history-section" id="history" aria-labelledby="history-title"><div class="history-heading"><div><h2 id="history-title">最近打包</h2><span id="history-count">暂无记录</span></div><button class="text-button" id="refresh-history" type="button"><svg class="icon"><use href="#i-history"/></svg>刷新记录</button></div>
+      <div class="history-empty" id="history-empty"><svg class="icon"><use href="#i-history"/></svg><div><p>你的镜像，会留在这里。</p><span>完成打包后，随时回来下载。</span></div></div>
+      <div class="history-record" id="history-record" hidden><span class="history-file"><svg class="icon"><use href="#i-box"/></svg></span><div><code id="history-image">my-app:latest</code><span>预览示例，不是实际打包记录</span></div><span class="history-success">演示完成</span><button class="text-button" id="history-download" type="button" aria-expanded="false" aria-controls="history-detail">查看结果<svg class="icon"><use href="#i-arrow"/></svg></button></div><p class="history-detail" id="history-detail" hidden role="status"></p>
+    </section>
+    <footer><span>镜像打包<span class="footer-separator">/</span>为你的 NAS 准备</span><span>通用版</span></footer>
+    <div class="preview-controls" aria-label="界面预览控制"><span>界面演示</span><button type="button" id="load-example">载入示例文件</button><span class="preview-explanation">仅预览，不上传或执行文件</span></div>
+    <p id="announcement" class="announcement" role="status" hidden></p>
+  </main>
+</body>
+</html>

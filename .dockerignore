@@ -1,0 +1,7 @@
+**
+!Dockerfile
+!server.py
+!design/
+!design/*.html
+!design/*.css
+!design/*.js

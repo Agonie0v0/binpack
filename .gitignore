@@ -1,0 +1,12 @@
+data/
+.preview-auth/
+.ui-test-auth/
+__pycache__/
+*.pyc
+*.sqlite3*
+setup-token
+.env
+.env.*
+*.tar
+*.tar.gz
+*.log

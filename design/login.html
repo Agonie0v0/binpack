@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>登录 · 镜像打包</title><link rel="stylesheet" href="/studio.css"><link rel="stylesheet" href="/auth.css"><script src="/auth-client.js" defer></script><script src="/auth.js" defer></script></head>
+<body class="auth-page" data-auth-page="login">
+<svg class="icon-definitions" aria-hidden="true"><defs><symbol id="a-box" viewBox="0 0 24 24"><path d="m12 3 9 5v9l-9 5-9-5V8l9-5Z"/><path d="m3 8 9 5 9-5m-9 5v9M7.5 5.5l9 5v4"/></symbol><symbol id="a-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></symbol><symbol id="a-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol></defs></svg>
+<header class="auth-header"><a class="brand" href="/login"><span class="brand-mark"><svg class="icon"><use href="#a-box"/></svg></span>镜像打包</a><span>NAS 本地工作台</span></header>
+<main class="auth-main"><section class="auth-card" aria-labelledby="auth-title"><h1 id="auth-title">欢迎回来。</h1><p class="auth-description">登录，继续你的镜像工作。</p>
+<form id="auth-form"><label for="username">账号<input id="username" name="username" placeholder="输入你的账号" autocomplete="username" maxlength="32" autocapitalize="none" spellcheck="false" required></label>
+<div class="auth-field"><label for="password">密码</label><span class="password-wrap"><input id="password" name="password" type="password" placeholder="输入密码" autocomplete="current-password" maxlength="128" required><button class="password-toggle" type="button" data-password-target="password" aria-label="显示密码" aria-pressed="false"><svg class="icon"><use href="#a-eye"/></svg></button></span></div>
+<div class="login-options"><label class="remember"><input id="remember" type="checkbox" name="remember">保持登录 7 天</label><button class="subtle-button" id="recovery-toggle" type="button" aria-expanded="false" aria-controls="recovery-help">忘记密码？</button></div>
+<p id="form-message" class="auth-message" role="alert" aria-live="polite"></p><button class="primary-button auth-submit" id="auth-submit" type="submit" disabled><span>登录工作台</span><svg class="icon"><use href="#a-arrow"/></svg></button>
+</form>
+<p id="recovery-help" class="recovery-help" hidden>请通过 NAS 管理终端重置管理员密码。具体命令见工具部署说明；重置后，所有设备都需要重新登录。</p>
+<p class="first-use" id="first-use" hidden>第一次使用？<a href="/setup">设置管理员账号</a></p>
+<p class="auth-footnote" id="auth-footnote">使用你为镜像打包设置的账号。</p>
+</section></main><footer class="auth-footer"><span>镜像打包<span class="footer-separator">/</span>通用版</span><span>你的私有工作台</span></footer>
+</body></html>
