@@ -6,16 +6,16 @@
 
 ## 飞牛 / NAS 部署
 
-公开镜像：`ghcr.io/agonie0v0/binpack:preview`，支持 `linux/amd64` 和 `linux/arm64`。服务镜像架构与未来上传文件的运行架构是两回事。
+公开镜像：`ghcr.io/agonie0v0/binpack:latest`，支持 `linux/amd64` 和 `linux/arm64`。`latest` 指主分支最近通过检查的版本，当前功能仍处于预览阶段。服务镜像架构与未来上传文件的运行架构是两回事。
 
 在飞牛 Docker 的 Compose 项目中粘贴：
 
 ```yaml
 services:
   binpack:
-    image: ghcr.io/agonie0v0/binpack:preview
+    image: ghcr.io/agonie0v0/binpack:latest
     ports:
-      - "8088:8088"
+      - "38627:8088"
     environment:
       DATA_DIR: /data
       COOKIE_SECURE: "0"
@@ -27,21 +27,21 @@ volumes:
   binpack-data:
 ```
 
-访问 `http://NAS的IP:8088`。从容器日志中的 `FIRST SETUP TOKEN` 取得一次性初始化凭证，设置自己的管理员账号。没有默认密码。更新时重新拉取镜像并重建容器，保留数据卷。
+访问 `http://NAS的IP:38627`。从容器日志中的 `FIRST SETUP TOKEN` 取得一次性初始化凭证，设置自己的管理员账号。没有默认密码。更新时重新拉取镜像并重建容器，保留数据卷；命令行为 `docker compose pull && docker compose up -d`。
 
 `binpack-data` 是 NAS Docker 管理的数据卷，实际位置可用 `docker volume inspect <项目名>_binpack-data` 查看。若改为 `/vol1/1000/docker/binpack/data:/data` 这样的绑定目录，请先创建目录并将所有者设为 `10001:10001`、权限设为 `700`；路径按实际 NAS 修改。账号数据库不能作为缓存清理。当前版本尚不产生打包缓存。
 
 容器以 UID/GID `10001:10001` 运行，无需特权模式或 Docker Socket。环境变量 `PORT` 可修改容器监听端口，端口映射需同步修改。
 
-源码内的 [compose.yaml](compose.yaml) 用于本地构建：`docker compose up -d --build`。在 NAS 直接拉取镜像请使用上面的 Compose。
+源码内的 [compose.yaml](compose.yaml) 可直接用于 NAS 部署：`docker compose up -d`。如需从源码构建，执行 `docker build -t binpack:local .`。
 
 ## 自动发布
 
 [GitHub Actions](https://github.com/Agonie0v0/binpack/actions/workflows/image.yml) 会在测试通过后发布到 GHCR：
 
-- 推送 `main`：更新 `preview`，同时保留 `sha-<短提交号>` 镜像。
-- 推送 `v*` 标签：发布同名标签，例如 `v0.1.0-preview.1`；不自动设置 `latest`。
-- Actions 页面手动运行：发布所选分支的提交标签；选择 `main` 时也更新 `preview`。
+- 推送 `main`：更新 `latest` 和 `preview`，同时保留 `sha-<短提交号>` 镜像。
+- 推送 `v*` 标签：发布同名标签，例如 `v0.1.0-preview.1`；`latest` 始终跟随主分支。
+- Actions 页面手动运行：发布所选分支的提交标签；选择 `main` 时也更新 `latest` 和 `preview`。
 - Pull Request：执行测试与容器运行检查，不发布镜像。
 
 流程使用 GitHub 内置的 `GITHUB_TOKEN`，无需配置 Docker Hub 密码。Actions 依赖固定到提交 SHA，Dependabot 每月检查更新。发布检查包括服务端鉴权测试、前端逻辑测试、容器内重复鉴权测试、启动健康检查和未登录拦截；不代表已验证实际二进制打包功能。
@@ -49,8 +49,8 @@ volumes:
 需要离线导入 NAS 时，在能拉取 GHCR 的 Docker 主机执行（ARM NAS 改为 `linux/arm64`）：
 
 ```sh
-docker pull --platform linux/amd64 ghcr.io/agonie0v0/binpack:preview
-docker save -o binpack-preview-amd64.tar ghcr.io/agonie0v0/binpack:preview
+docker pull --platform linux/amd64 ghcr.io/agonie0v0/binpack:latest
+docker save -o binpack-latest-amd64.tar ghcr.io/agonie0v0/binpack:latest
 ```
 
 将生成的 tar 文件导入飞牛 Docker 镜像。此处导出的是工具本身的预览镜像。

@@ -1,9 +1,8 @@
 services:
   binpack:
-    image: ${BINPACK_IMAGE:-binpack:local}
-    build: .
+    image: ghcr.io/agonie0v0/binpack:latest
     ports:
-      - "8088:8088"
+      - "38627:8088"
     environment:
       DATA_DIR: /data
       COOKIE_SECURE: "0"
