@@ -81,7 +81,7 @@ class AuthenticationTests(unittest.TestCase):
         return headers
 
     def test_protected_pages_and_future_operations(self):
-        for path in ['/', '/index.html', '/preview.html', '/account', '/studio.js', '/server.py']:
+        for path in ['/', '/index.html', '/preview.html', '/history', '/history.html', '/history.js', '/account', '/studio.js', '/server.py']:
             status, _, headers = self.client.request('GET', path)
             self.assertEqual(status, 303, path)
             self.assertEqual(headers['Location'], '/setup')
@@ -103,6 +103,8 @@ class AuthenticationTests(unittest.TestCase):
         self.assertNotIn(self.client.cookies[SESSION_COOKIE].encode(), self.store.database.read_bytes())
         self.assertEqual(self.client.state()['user'], 'test-admin')
         self.assertEqual(self.client.request('GET', '/')[0], 200)
+        for path in ['/history', '/history.html', '/history.js']:
+            self.assertEqual(self.client.request('GET', path)[0], 200, path)
         for path in ['/server.py', '/data/auth.sqlite3', '/auth.sqlite3', '/%2e%2e/server.py']:
             self.assertEqual(self.client.request('GET', path)[0], 404)
 

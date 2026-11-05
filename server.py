@@ -328,6 +328,7 @@ class Handler(BaseHTTPRequestHandler):
                   '/setup.html': 'setup.html', '/studio.css': 'studio.css', '/auth.css': 'auth.css',
                   '/auth.js': 'auth.js', '/auth-client.js': 'auth-client.js', '/favicon.svg': 'favicon.svg'}
         protected = {'/': 'index.html', '/index.html': 'index.html', '/preview.html': 'index.html',
+                     '/history': 'history.html', '/history.html': 'history.html', '/history.js': 'history.js',
                      '/studio.js': 'studio.js', '/session.js': 'session.js', '/account': 'account.html',
                      '/account.html': 'account.html', '/account.js': 'account.js'}
         if path not in public and not user:

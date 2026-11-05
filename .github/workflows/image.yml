@@ -31,6 +31,7 @@ jobs:
           python -m unittest -v test_auth.py test_packaging.py
           node design/verify-preview.mjs
           node design/verify-auth-client.mjs
+          node design/verify-history.mjs
       - name: Build and test container runtime
         run: |
           docker build -t binpack:ci .

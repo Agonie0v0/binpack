@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>打包记录 · binpack</title><link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="stylesheet" href="studio.css">
+  <link rel="stylesheet" href="auth.css">
+  <script src="auth-client.js" defer></script>
+  <script src="session.js" defer></script>
+  <script src="history.js" defer></script>
+</head>
+<body class="history-page">
+  <svg class="icon-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 9 5v9l-9 5-9-5V8l9-5Z"/><path d="m3 8 9 5 9-5m-9 5v9M7.5 5.5l9 5v4"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 15V3m-4 4 4-4 4 4M4 15v5h16v-5"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M13 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9l-6-6Z"/><path d="M13 3v6h6m-11 5h8m-8 3h5"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 10 4 4 4-4"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-4-4 4 4 4-4M4 17v4h16v-4"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h8m4 0h4M4 17h3m4 0h9"/><circle cx="14" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 11a9 9 0 1 1 2 7M3 5v6h6m3-4v6l4 2"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol>
+  </defs></svg>
+  <header class="app-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="镜像打包首页"><span class="brand-mark"><svg class="icon"><use href="#i-box"/></svg></span><span>镜像打包</span></a>
+      <nav aria-label="主导航"><a class="nav-link" href="/" id="create-link">创建镜像</a><a class="nav-link active" href="/history" id="history-link" aria-current="page">打包记录</a></nav>
+      <div class="header-end"><a class="project-link" href="https://github.com/Agonie0v0/binpack" target="_blank" rel="noopener noreferrer" aria-label="GitHub 项目地址（新窗口打开）" title="GitHub 项目地址"><svg class="icon project-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 19c-4.3 1.3-4.3-2.2-6-2.7m12 5v-3.8a3.3 3.3 0 0 0-.9-2.6c3-.3 6.2-1.5 6.2-6.8a5.3 5.3 0 0 0-1.4-3.7 4.9 4.9 0 0 0-.1-3.7S17.7.4 15 2.1a12.7 12.7 0 0 0-6 0C6.3.4 5.2.7 5.2.7a4.9 4.9 0 0 0-.1 3.7 5.3 5.3 0 0 0-1.4 3.7c0 5.3 3.2 6.5 6.2 6.8A3.3 3.3 0 0 0 9 17.5v3.8" transform="translate(0 1) scale(.95)"/></svg></a><details class="account-menu"><summary aria-label="账号菜单"><span class="account-avatar" data-account-avatar>U</span><span class="account-name" data-account-name>账号</span><svg class="icon account-chevron"><use href="#i-chevron"/></svg></summary><div class="account-dropdown"><div class="dropdown-identity"><strong data-account-name>账号</strong><span>管理员</span></div><a href="/account"><svg class="icon"><use href="#i-sliders"/></svg>账号设置</a><button type="button" data-logout><svg class="icon"><use href="#i-arrow"/></svg>退出登录</button></div></details></div>
+    </div>
+  </header>
+  <main>
+    <div class="page-heading"><div><h1>打包记录</h1><p>查看打包进度，下载镜像包与部署配置，管理历史缓存。</p></div><a class="primary-button" href="/">创建镜像<svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a></div>
+    <p id="announcement" class="announcement" role="status" hidden></p>
+    <section class="history-section" id="history" aria-labelledby="history-title"><div class="history-heading"><div><h2 id="history-title">全部记录</h2><span id="history-count">正在读取…</span></div><button class="text-button" id="refresh-history" type="button"><svg class="icon"><use href="#i-history"/></svg>刷新记录</button></div>
+      <div class="history-empty" id="history-empty" hidden><svg class="icon"><use href="#i-history"/></svg><div><p>你的镜像，会留在这里。</p><span>完成打包后，随时回来下载。</span></div></div>
+      <p class="history-detail" id="history-detail" role="status">正在读取打包记录…</p><div id="history-list"></div><div class="cache-actions"><span>记录和镜像包保存在 NAS 的 /data/jobs，清理不会删除已导入的镜像或账号。</span><button type="button" class="text-button" id="clean-uploads">清理未使用的上传文件</button></div>
+    </section>
+    <footer><span>镜像打包<span class="footer-separator">/</span>为你的 NAS 准备</span><span>通用版</span></footer>
+  </main>
+</body>
+</html>
