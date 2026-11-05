@@ -1,5 +1,6 @@
 services:
   binpack:
+    container_name: binpack
     image: ghcr.io/agonie0v0/binpack:latest
     ports:
       - "38627:8088"

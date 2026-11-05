@@ -13,6 +13,7 @@
 ```yaml
 services:
   binpack:
+    container_name: binpack
     image: ghcr.io/agonie0v0/binpack:latest
     ports:
       - "38627:8088"
@@ -28,6 +29,8 @@ volumes:
 ```
 
 访问 `http://NAS的IP:38627`。从容器日志中的 `FIRST SETUP TOKEN` 取得一次性初始化凭证，设置自己的管理员账号。没有默认密码。更新时重新拉取镜像并重建容器，保留数据卷；命令行为 `docker compose pull && docker compose up -d`。
+
+`container_name: binpack` 固定容器显示名称，可以改成自己的名字。同一 NAS 上的容器名称必须唯一；修改后重新部署 Compose 项目即可生效。
 
 `binpack-data` 是 NAS Docker 管理的数据卷，实际位置可用 `docker volume inspect <项目名>_binpack-data` 查看。也可以改为 `/vol1/1000/docker/binpack/data:/data` 这样的专用绑定目录，路径按实际 NAS 修改。启动器会将数据目录及已有账号文件的所有者设为 `10001:10001`，目录权限设为 `700`、账号文件设为 `600`，然后以普通用户运行服务。它不会递归修改目录内其他文件。账号数据库不能作为缓存清理。当前版本尚不产生打包缓存。
 
