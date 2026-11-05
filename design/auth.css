@@ -7,3 +7,19 @@
 .auth-card form>.auth-field{font-size:12px;font-weight:500;margin-top:22px}.setup-card form>.auth-field{margin-top:19px}.password-form>.auth-field{font-size:12px;font-weight:500;margin-top:20px}
 
 .auth-card .auth-description{max-width:none}
+
+/* One aligned control, with its own styles instead of the advanced-details layout. */
+.account-menu>summary{display:flex;align-items:center;justify-content:flex-start;gap:9px;padding:5px 9px 5px 5px;min-height:40px;border:1px solid transparent;border-radius:11px;list-style:none;cursor:pointer;transition:background .16s,border-color .16s}
+.account-menu>summary::-webkit-details-marker{display:none}
+.account-menu>summary:hover,.account-menu[open]>summary{background:#f5f6f9;border-color:var(--line)}
+.account-menu>summary>.account-avatar,.account-avatar{display:grid;place-items:center;flex:0 0 auto;width:29px;height:29px;border-radius:8px;background:#edf0f6;color:#4b5875;font-size:11px;font-weight:600;line-height:1;letter-spacing:.1px}
+.account-menu>summary>.account-name{display:block;max-width:110px;font-size:12px;font-weight:500;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-menu>summary>.account-chevron{width:12px;height:12px;margin-left:2px;transition:transform .16s}
+.account-menu[open]>summary>.account-chevron{transform:rotate(180deg)}
+.account-dropdown{top:calc(100% + 10px);width:208px;padding:6px;border-radius:12px;box-shadow:0 8px 28px #252b3b0c,0 2px 6px #252b3b05}
+.dropdown-identity{display:flex;flex-direction:column;gap:5px;padding:12px 12px 14px;margin-bottom:5px;border-bottom:1px solid var(--line)}
+.dropdown-identity strong{font-size:12px;font-weight:550;overflow-wrap:anywhere}.dropdown-identity>span{font-size:10px;color:var(--secondary)}
+.account-dropdown a,.account-dropdown button{display:flex;align-items:center;gap:10px;font-size:12px;min-height:40px;border-radius:7px;padding:10px 12px}
+.account-dropdown .icon{width:15px;height:15px;color:var(--secondary)}
+@media(max-width:620px){.account-menu>summary{gap:7px;padding-right:7px}.account-menu>summary>.account-name{display:block;max-width:72px;font-size:11px}.account-menu>summary>.account-chevron{display:block}.account-dropdown{width:190px}}
+@media(prefers-reduced-motion:reduce){.account-menu>summary,.account-menu>summary>.account-chevron{transition:none}}

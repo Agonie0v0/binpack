@@ -7,12 +7,17 @@ function element(id) {
   if (!elements.has(id)) elements.set(id, {
     value:id === 'image-tag' ? 'latest' : id === 'runtime' ? 'auto' : '',
     hidden:false, disabled:false, textContent:'',
-    classList:{add(){},remove(){}},addEventListener(){},
+    classList:{add(){},remove(){},toggle(){}},addEventListener(){},replaceChildren(){},
   });
   return elements.get(id);
 }
-const context = vm.createContext({DataView,Error,setTimeout,
-  document:{getElementById:element,querySelector:element},
+const context = vm.createContext({DataView,Error,setTimeout,Promise,Map,Date,console,
+  window:{sessionReady:Promise.resolve({user:'tester',csrf:'test'}),authFetch:async(path,options)=> {
+    if(path==='/api/system')return {connected:true,message:'connected'};
+    if(path==='/api/jobs')return {jobs:[]};
+    if(path==='/api/uploads')return {id:'a'.repeat(32),filename:options.body.name,status:'ready',analysis:{arch:options.body.machine===183?'arm64':'amd64',runtime:'alpine',basis:'ELF',flags:[],help_excerpt:'',note:'done',port:'',volume:''}};
+  }},
+  document:{getElementById:element,querySelector:element,querySelectorAll:()=>[]},
 });
 const script = await readFile(new URL('./studio.js',import.meta.url),'utf8');
 vm.runInContext(script,context);
@@ -20,7 +25,7 @@ function elf(machine,name='my-app-linux-amd64') {
   const data = new Uint8Array(64);
   data.set([0x7f,0x45,0x4c,0x46,2,1]);
   new DataView(data.buffer).setUint16(18,machine,true);
-  return {name,size:64,slice(){return {arrayBuffer:async()=>data.buffer}}};
+  return {name,machine,size:64,slice(){return {arrayBuffer:async()=>data.buffer}}};
 }
 await context.chooseFile(elf(62));
 assert.equal(element('architecture').textContent,'linux/amd64');
@@ -41,4 +46,8 @@ await context.chooseFile(elf(183,'new-linux-arm64'));
 finishRead(await elf(62).slice().arrayBuffer());
 await stale;
 assert.equal(element('file-name').textContent,'new-linux-arm64');
-console.log('PASS: amd64/arm64 headers, invalid files, unsupported machines, selection race.');
+element('port').value='9000';
+context.applyAnalysis({id:'b'.repeat(32),status:'ready',analysis:{arch:'amd64',runtime:'debian',basis:'ELF',flags:['--port'],help_excerpt:'',note:'done',port:8080,volume:'/data'}});
+assert.equal(element('port').value,'9000');
+assert.equal(element('volume').value,'/data');
+console.log('PASS: upload selection, architecture validation, stale reads and preserving manual configuration.');

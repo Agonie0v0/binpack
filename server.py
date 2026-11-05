@@ -1,10 +1,10 @@
-"""NAS workbench authentication server; packaging remains an interactive preview."""
+"""NAS binary image workbench with server-side authentication."""
 from contextlib import contextmanager
 from hashlib import pbkdf2_hmac, sha256
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, unquote
 import argparse
 import getpass
 import hmac
@@ -15,6 +15,7 @@ import secrets
 import sqlite3
 import threading
 import time
+from packager import Packager, PackageError
 
 ROOT = Path(__file__).resolve().parent
 ITERATIONS = 600_000
@@ -206,6 +207,7 @@ class Server(ThreadingHTTPServer):
 
     def __init__(self, address, store, secure_cookie=False, public_origin=''):
         self.store, self.secure_cookie, self.public_origin = store, secure_cookie, public_origin.rstrip('/')
+        self.packager = Packager(store.directory)
         self.capacity = threading.BoundedSemaphore(24)
         super().__init__(address, Handler)
 
@@ -287,9 +289,44 @@ class Handler(BaseHTTPRequestHandler):
         if path == '/healthz':
             self.json(200, {'ok': True})
             return
+        if user and (path.startswith('/api/') or path.startswith('/downloads/')):
+            try:
+                packager = self.server.packager
+                if path == '/api/system':
+                    self.json(200, packager.docker.status())
+                    return
+                if path == '/api/jobs':
+                    self.json(200, {'jobs': packager.list()})
+                    return
+                match = re.fullmatch(r'/api/(uploads|jobs)/([a-f0-9]{32})', path)
+                if match:
+                    root = packager.uploads if match[1] == 'uploads' else packager.jobs
+                    self.json(200, packager.read(packager.folder(root, match[2])))
+                    return
+                match = re.fullmatch(r'/downloads/([a-f0-9]{32})/(image|compose|sha256)', path)
+                if match:
+                    stream, name, content_type = packager.download(match[1], match[2])
+                    with stream:
+                        self.send_response(200)
+                        self.send_header('Content-Type', content_type)
+                        self.send_header('Content-Length', str(os.fstat(stream.fileno()).st_size))
+                        self.send_header('Content-Disposition', f'attachment; filename="{name}"')
+                        self.send_header('Cache-Control', 'no-store')
+                        self.send_header('X-Content-Type-Options', 'nosniff')
+                        self.end_headers()
+                        if self.command != 'HEAD':
+                            import shutil
+                            shutil.copyfileobj(stream, self.wfile, 1024 * 1024)
+                    return
+            except PackageError as error:
+                self.json(error.status, {'error': error.message})
+                return
+            except OSError:
+                self.json(500, {'error': '读取文件失败，请检查数据目录和可用空间。'})
+                return
         public = {'/login': 'login.html', '/login.html': 'login.html', '/setup': 'setup.html',
                   '/setup.html': 'setup.html', '/studio.css': 'studio.css', '/auth.css': 'auth.css',
-                  '/auth.js': 'auth.js', '/auth-client.js': 'auth-client.js'}
+                  '/auth.js': 'auth.js', '/auth-client.js': 'auth-client.js', '/favicon.svg': 'favicon.svg'}
         protected = {'/': 'index.html', '/index.html': 'index.html', '/preview.html': 'index.html',
                      '/studio.js': 'studio.js', '/session.js': 'session.js', '/account': 'account.html',
                      '/account.html': 'account.html', '/account.js': 'account.js'}
@@ -303,10 +340,10 @@ class Handler(BaseHTTPRequestHandler):
         if not filename:
             self.json(404, {'error': '页面不存在。'})
             return
-        content_type = {'html': 'text/html', 'css': 'text/css', 'js': 'text/javascript'}[filename.rsplit('.', 1)[1]]
+        content_type = {'html': 'text/html', 'css': 'text/css', 'js': 'text/javascript', 'svg': 'image/svg+xml'}[filename.rsplit('.', 1)[1]]
         self.respond(200, (ROOT / 'design' / filename).read_bytes(), content_type + '; charset=utf-8')
 
-    def post_body(self):
+    def check_csrf(self):
         origin = self.headers.get('Origin', '')
         try:
             parsed = urlsplit(origin)
@@ -323,6 +360,9 @@ class Handler(BaseHTTPRequestHandler):
         supplied = self.headers.get('X-CSRF-Token', '')
         if not TOKEN.fullmatch(csrf) or not hmac.compare_digest(csrf.encode(), supplied.encode()):
             raise AuthError(403, '页面凭证已失效，请刷新后重试。')
+
+    def post_body(self):
+        self.check_csrf()
         if self.headers.get_content_type() != 'application/json' or self.headers.get('Transfer-Encoding'):
             raise AuthError(415, '请求格式不正确。')
         try:
@@ -350,6 +390,20 @@ class Handler(BaseHTTPRequestHandler):
                 raise AuthError(401, '登录已过期，请重新登录。')
             if path in ('/api/auth/login', '/api/auth/setup', '/api/auth/password'):
                 store.check_rate(client)
+            if path == '/api/uploads':
+                self.check_csrf()
+                if self.headers.get_content_type() != 'application/octet-stream' or self.headers.get('Transfer-Encoding'):
+                    raise AuthError(415, '请使用文件上传格式。')
+                try:
+                    if len(self.headers.get_all('Content-Length', [])) != 1:
+                        raise ValueError
+                    length = int(self.headers.get('Content-Length', '0'))
+                except ValueError:
+                    raise AuthError(400, '上传文件长度无效。') from None
+                self.connection.settimeout(60)
+                result = self.server.packager.upload(self.rfile, length, unquote(self.headers.get('X-Filename', 'program')))
+                self.json(201, result)
+                return
             data = self.post_body()
             if path == '/api/auth/setup':
                 token = store.setup(data.get('setup_token'), data.get('username'), data.get('password'))
@@ -367,6 +421,15 @@ class Handler(BaseHTTPRequestHandler):
                 store.change_password(jar.get(SESSION_COOKIE), data.get('current_password'), data.get('new_password'))
                 store.clear_failures(client)
                 self.json(200, {'ok': True}, [self.cookie(SESSION_COOKIE, '', 0)])
+            elif path == '/api/jobs':
+                self.json(202, self.server.packager.start(data))
+            elif path == '/api/uploads/clean':
+                self.json(200, {'removed': self.server.packager.clean_uploads()})
+            elif re.fullmatch(r'/api/jobs/[a-f0-9]{32}/import', path):
+                self.json(202, self.server.packager.import_job(path.split('/')[3]))
+            elif re.fullmatch(r'/api/jobs/[a-f0-9]{32}/delete', path):
+                self.server.packager.delete(path.split('/')[3])
+                self.json(200, {'ok': True})
             else:
                 raise AuthError(404, '接口不存在。')
         except AuthError as error:
@@ -374,6 +437,8 @@ class Handler(BaseHTTPRequestHandler):
                 store.failure(client)
             headers = [('Retry-After', str(error.retry))] if error.retry else []
             self.json(error.status, {'error': error.message}, headers)
+        except PackageError as error:
+            self.json(error.status, {'error': error.message})
         except (OSError, sqlite3.Error):
             self.json(500, {'error': '账号服务暂时不可用，请检查数据目录权限或稍后重试。'})
 
@@ -400,7 +465,7 @@ def main():
     server = Server((args.host, args.port), store, os.getenv('COOKIE_SECURE') == '1', os.getenv('PUBLIC_ORIGIN', ''))
     if not store.initialized():
         print('FIRST SETUP TOKEN: ' + store.bootstrap.read_text(encoding='ascii'), flush=True)
-    print(f'Workbench: http://{args.host}:{server.server_port} (packaging is still a preview)', flush=True)
+    print(f'Workbench: http://{args.host}:{server.server_port}', flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

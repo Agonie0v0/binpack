@@ -11,6 +11,7 @@ services:
       # PUBLIC_ORIGIN: https://binpack.example.com
     volumes:
       - binpack-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: unless-stopped
 
 volumes:

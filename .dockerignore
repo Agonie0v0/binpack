@@ -2,7 +2,9 @@
 !Dockerfile
 !server.py
 !container_start.py
+!packager.py
 !design/
 !design/*.html
 !design/*.css
 !design/*.js
+!design/favicon.svg

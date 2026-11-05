@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import stat
 
 
 def prepare(directory):
@@ -25,7 +26,9 @@ def prepare(directory):
                 os.chown(path, 10001, 10001, follow_symlinks=False)
             if info.st_mode & 0o777 != mode:
                 os.chmod(path, mode)
-        os.setgroups([])
+        docker_socket = Path(os.getenv('DOCKER_SOCKET', '/var/run/docker.sock'))
+        groups = [docker_socket.stat().st_gid] if docker_socket.exists() and stat.S_ISSOCK(docker_socket.stat().st_mode) else []
+        os.setgroups(groups)
         os.setgid(10001)
         os.setuid(10001)
     # Check using the final service identity before SQLite attempts to create its files.
