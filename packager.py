@@ -124,6 +124,8 @@ class UnixHTTP(HTTPConnection):
         super().__init__('localhost', timeout=timeout)
 
     def connect(self):
+        if not hasattr(socket, 'AF_UNIX'):
+            raise OSError('Docker Socket is available in the Linux container deployment')
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.sock.settimeout(self.timeout)
         self.sock.connect(self.socket_path)
@@ -275,16 +277,10 @@ class Docker:
                         payload = json.dumps(manifest).encode()
                         member.size, stream = len(payload), io.BytesIO(payload)
                         found = True
-                    elif member.name == 'repositories':
+                    elif member.name in ('repositories', 'index.json', 'oci-layout'):
+                        # Export a Docker archive deliberately. Containerd prefers OCI index
+                        # annotations over manifest.json when both formats are present.
                         continue
-                    elif member.name == 'index.json':
-                        index = json.load(stream)
-                        for item in index.get('manifests', []):
-                            for key in ('io.containerd.image.name', 'org.opencontainers.image.ref.name'):
-                                if key in item.get('annotations', {}):
-                                    item['annotations'][key] = reference if key == 'io.containerd.image.name' else reference.split(':')[-1]
-                        payload = json.dumps(index).encode()
-                        member.size, stream = len(payload), io.BytesIO(payload)
                     output.addfile(member, stream)
             if not found:
                 raise PackageError('镜像归档缺少 Docker manifest。', 502)
