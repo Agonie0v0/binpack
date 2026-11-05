@@ -29,9 +29,11 @@ volumes:
 
 访问 `http://NAS的IP:38627`。从容器日志中的 `FIRST SETUP TOKEN` 取得一次性初始化凭证，设置自己的管理员账号。没有默认密码。更新时重新拉取镜像并重建容器，保留数据卷；命令行为 `docker compose pull && docker compose up -d`。
 
-`binpack-data` 是 NAS Docker 管理的数据卷，实际位置可用 `docker volume inspect <项目名>_binpack-data` 查看。若改为 `/vol1/1000/docker/binpack/data:/data` 这样的绑定目录，请先创建目录并将所有者设为 `10001:10001`、权限设为 `700`；路径按实际 NAS 修改。账号数据库不能作为缓存清理。当前版本尚不产生打包缓存。
+`binpack-data` 是 NAS Docker 管理的数据卷，实际位置可用 `docker volume inspect <项目名>_binpack-data` 查看。也可以改为 `/vol1/1000/docker/binpack/data:/data` 这样的专用绑定目录，路径按实际 NAS 修改。启动器会将数据目录及已有账号文件的所有者设为 `10001:10001`，目录权限设为 `700`、账号文件设为 `600`，然后以普通用户运行服务。它不会递归修改目录内其他文件。账号数据库不能作为缓存清理。当前版本尚不产生打包缓存。
 
-容器以 UID/GID `10001:10001` 运行，无需特权模式或 Docker Socket。环境变量 `PORT` 可修改容器监听端口，端口映射需同步修改。
+容器入口以 root 准备数据目录，随后移除附加组并切换为 UID/GID `10001:10001` 运行服务，无需特权模式或 Docker Socket。如果手动设置 Compose 的 `user: "10001:10001"`，则跳过自动权限修复，需要提前赋予目录和账号文件的读写权限。环境变量 `PORT` 可修改容器监听端口，端口映射需同步修改。
+
+若日志出现 `unable to open database file` 或 `Cannot prepare data directory`，请重新拉取最新镜像并重建容器，保留原数据卷。目录必须可写，磁盘需要有剩余空间；只读挂载或 NAS ACL 拒绝访问时需要在 NAS 上调整。不要删除账号数据库或数据卷来修复权限。
 
 源码内的 [compose.yaml](compose.yaml) 可直接用于 NAS 部署：`docker compose up -d`。如需从源码构建，执行 `docker build -t binpack:local .`。
 
@@ -44,7 +46,7 @@ volumes:
 - Actions 页面手动运行：发布所选分支的提交标签；选择 `main` 时也更新 `latest` 和 `preview`。
 - Pull Request：执行测试与容器运行检查，不发布镜像。
 
-流程使用 GitHub 内置的 `GITHUB_TOKEN`，无需配置 Docker Hub 密码。Actions 依赖固定到提交 SHA，Dependabot 每月检查更新。发布检查包括服务端鉴权测试、前端逻辑测试、容器内重复鉴权测试、启动健康检查和未登录拦截；不代表已验证实际二进制打包功能。
+流程使用 GitHub 内置的 `GITHUB_TOKEN`，无需配置 Docker Hub 密码。Actions 依赖固定到提交 SHA，Dependabot 每月检查更新。发布检查包括服务端鉴权测试、前端逻辑测试、容器内重复鉴权测试、启动健康检查、未登录拦截，以及 NAS 数据目录权限修复、账号保留、重启和只读挂载诊断；不代表已验证实际二进制打包功能。
 
 需要离线导入 NAS 时，在能拉取 GHCR 的 Docker 主机执行（ARM NAS 改为 `linux/arm64`）：
 

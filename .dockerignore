@@ -1,6 +1,7 @@
 **
 !Dockerfile
 !server.py
+!container_start.py
 !design/
 !design/*.html
 !design/*.css

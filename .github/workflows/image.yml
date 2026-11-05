@@ -34,7 +34,7 @@ jobs:
       - name: Build and test container runtime
         run: |
           docker build -t binpack:ci .
-          docker run --rm --entrypoint python \
+          docker run --rm --user 10001:10001 --entrypoint python \
             -v "$PWD/test_auth.py:/opt/image-packager/test_auth.py:ro" \
             binpack:ci -m unittest -v test_auth.py
           docker run -d --name binpack-smoke -p 127.0.0.1:8088:8088 binpack:ci
@@ -43,6 +43,27 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8088/)" = 303
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8088/api/builds)" = 401
           docker exec binpack-smoke python -c "from pathlib import Path; p=Path('/data/setup-token'); assert p.is_file(); assert p.stat().st_mode & 0o777 == 0o600"
+      - name: NAS data permissions and account preservation
+        run: |
+          nas_data=$(mktemp -d)
+          docker run --rm --entrypoint python -v "$nas_data:/data" binpack:ci -c "import os; from pathlib import Path; from server import AuthStore; s=AuthStore('/data'); s.setup(s.bootstrap.read_text(), 'nas-test-admin', 'test-only-nas-password'); os.chown('/data',0,0); os.chmod('/data',0o755); os.chown('/data/auth.sqlite3',0,0); Path('/data/unrelated-file').write_text('keep ownership')"
+          if docker run --rm --user 10001:10001 --entrypoint python -v "$nas_data:/data" binpack:ci -c "from server import AuthStore; AuthStore('/data')" > "$RUNNER_TEMP/binpack-before-fix.log" 2>&1; then
+            echo 'ERROR: fixture did not reproduce the original permissions failure'
+            exit 1
+          fi
+          grep -F 'unable to open database file' "$RUNNER_TEMP/binpack-before-fix.log"
+          docker run -d --name binpack-nas -p 127.0.0.1:38627:8088 -v "$nas_data:/data" binpack:ci
+          trap 'docker rm -fv binpack-nas >/dev/null' EXIT
+          curl --fail --retry 10 --retry-all-errors --retry-delay 1 http://127.0.0.1:38627/healthz
+          docker exec --user 10001:10001 binpack-nas python -c "from pathlib import Path; from server import AuthStore; s=AuthStore('/data'); assert s.user(s.login('nas-test-admin','test-only-nas-password')) == 'nas-test-admin'; assert not s.bootstrap.exists(); assert Path('/data').stat().st_uid == 10001; assert Path('/data/auth.sqlite3').stat().st_mode & 0o777 == 0o600; assert Path('/data/unrelated-file').stat().st_uid == 0; uid=next(line for line in Path('/proc/1/status').read_text().splitlines() if line.startswith('Uid:')); assert uid.split()[1:] == ['10001']*4"
+          docker restart binpack-nas
+          curl --fail --retry 10 --retry-all-errors --retry-delay 1 http://127.0.0.1:38627/healthz
+          docker exec --user 10001:10001 binpack-nas python -c "from server import AuthStore; s=AuthStore('/data'); assert s.user(s.login('nas-test-admin','test-only-nas-password')) == 'nas-test-admin'"
+          if docker run --rm -v "$nas_data:/data:ro" binpack:ci > "$RUNNER_TEMP/binpack-readonly.log" 2>&1; then
+            echo 'ERROR: read-only data mount unexpectedly accepted'
+            exit 1
+          fi
+          grep -F '[binpack] Cannot prepare data directory' "$RUNNER_TEMP/binpack-readonly.log"
 
   publish:
     if: github.event_name != 'pull_request'
